@@ -1,17 +1,25 @@
 package com.twitter.handle.twitterhandle.controllers;
 
+import com.twitter.handle.twitterhandle.constants.ApplicationConstants;
+import com.twitter.handle.twitterhandle.model.Tweet;
+import com.twitter.handle.twitterhandle.response.Response;
+import com.twitter.handle.twitterhandle.response.TweetsWrapper;
 import com.twitter.handle.twitterhandle.services.TweetService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 @RestController
+@Api(value = "Tweet fetch APIs")
+@CrossOrigin(origins = "*")
 public class TwitterStreamController {
 
     private TweetService tweetService;
@@ -23,9 +31,30 @@ public class TwitterStreamController {
     }
 
     @GetMapping("/fetch/tweets/{id}")
-    public ResponseEntity<String> fetchTweets(@PathVariable String id) {
+    @ApiOperation(value = "This API fetches tweets")
+    @ResponseBody
+    public ResponseEntity<Response> fetchTweets(@PathVariable String id) {
         logger.trace("Getting Started!!");
-        return tweetService.getTweetsById(id);
+        ResponseEntity<Response> responseEntity = null;
+        Response response = new Response();
+        try {
+            TweetsWrapper tweets = tweetService.getTweetsByQuery(id);
+            if(Objects.nonNull(tweets)){
+                response.setStatusCode(HttpStatus.OK);
+                response.setMessage(ApplicationConstants.SUCCESS);
+                response.setData(tweets);
+            } else {
+                response.setStatusCode(HttpStatus.NOT_FOUND);
+                response.setMessage("no data found");
+                response.setData(null);
+            }
+            responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            response.setMessage(ApplicationConstants.FAILURE);
+            responseEntity = new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return  responseEntity;
     }
 //
 //    @GetMapping("/fetch/stream")
