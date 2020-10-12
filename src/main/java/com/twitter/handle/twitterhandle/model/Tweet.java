@@ -1,11 +1,26 @@
 package com.twitter.handle.twitterhandle.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Data
 public class Tweet {
+    @JsonProperty(value = "id")
     protected String id;
-    protected String tweet;
-    protected String userName;
-    protected String fullName;
+    @JsonProperty(value = "text")
+    protected String text;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
 }
