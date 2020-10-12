@@ -5,6 +5,7 @@ import com.twitter.handle.twitterhandle.model.Tweet;
 import com.twitter.handle.twitterhandle.response.Response;
 import com.twitter.handle.twitterhandle.response.TweetsWrapper;
 import com.twitter.handle.twitterhandle.services.TweetService;
+import com.twitter.handle.twitterhandle.services.TwitterTokenService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,11 +25,13 @@ import java.util.Objects;
 public class TwitterStreamController {
 
     private TweetService tweetService;
+    private TwitterTokenService twitterTokenService;
     Logger logger = LoggerFactory.getLogger(TwitterStreamController.class);
 
     @Autowired
-    public TwitterStreamController(TweetService tweetService) {
+    public TwitterStreamController(TweetService tweetService, TwitterTokenService twitterTokenService) {
         this.tweetService = tweetService;
+        this.twitterTokenService = twitterTokenService;
     }
 
     @GetMapping("/fetch/tweets/{id}")
@@ -36,7 +40,7 @@ public class TwitterStreamController {
     public ResponseEntity<Response> fetchTweets(@PathVariable String id) {
         logger.trace("Getting Started!!");
         ResponseEntity<Response> responseEntity = null;
-        Response response = new Response();
+        Response response = Response.getSuccessResponse();
         try {
             TweetsWrapper tweets = tweetService.getTweetsByQuery(id);
             if(Objects.nonNull(tweets)){
@@ -55,6 +59,28 @@ public class TwitterStreamController {
             responseEntity = new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return  responseEntity;
+    }
+
+    @GetMapping("/token")
+    public ResponseEntity<Response> getToken() {
+        ResponseEntity<Response> responseEntity = null;
+        Response response = Response.getSuccessResponse();
+        try {
+            String token = twitterTokenService.getToken();
+            if(!StringUtils.isEmpty(token)){
+                response.setData(token);
+                responseEntity = new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                response.setStatusCode(HttpStatus.NOT_FOUND);
+                response.setMessage(ApplicationConstants.FAILURE);
+                responseEntity = new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            response.setMessage(ApplicationConstants.FAILURE);
+            responseEntity = new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return responseEntity;
     }
 //
 //    @GetMapping("/fetch/stream")
